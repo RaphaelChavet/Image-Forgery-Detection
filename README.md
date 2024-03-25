@@ -1,13 +1,13 @@
 ## Launching the code
 
-### Chosing the model
+### Choosing the model
 Currently, the code supports these models:
 * resnet18
 * resnet152
 * sliceburster
 
 You can choose the model used by three ways:
-* Pass the model name as an argument when launching the script:
+* Pass the model name as a first argument when launching the script:
     ````
     python main.py model_name
     `````
@@ -25,4 +25,29 @@ You can choose the model used by three ways:
     SpliceBuster
     ````
 
-> :wrench: If the model is still prompted, there is probably an error in the model you wrote. Check fornthe spelling and the absence of uppercases.
+> :wrench: If the model is still prompted, there is probably an error in the model you wrote. Check for the spelling and the absence of uppercases.
+
+### Choosing available GPUs
+In order to limit the access to the ressources, you may want to choose which GPU can be used by the script.
+This can be choosed by:
+
+* Adding the GPU list as a second argument. For example, ty use GPUs 0 and 1:
+    ````
+    python main.py model_name 0,1
+    `````
+* Choose the GPUs to use when prompted:
+    ````
+    No valid GPUs found or none selected.
+    [?] Please choose the GPU indices to use (0-9): 
+    > [X] 0
+    [ ] 1
+    [ ] 2
+    [ ] 3
+    [ ] 4
+    [ ] 5
+    [ ] 6
+    [ ] 7
+    [ ] 8
+    [ ] 9
+    ````
+

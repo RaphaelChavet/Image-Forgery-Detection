@@ -2,7 +2,7 @@ import os
 
 import numpy as np
 from termcolor import colored
-
+import time
 import torch
 import torchvision
 
@@ -24,46 +24,26 @@ TAMPERED_DIR = "/hadatasets/gabriel_bertocco/ForensicsDatasets/CASIA2.0/CASIA2.0
 np.random.seed(12)
 
 def main():
-
-	# List of valid models
-	valid_models = ['resnet18', 'resnet152', 'SpliceBuster']
-
-	# Check if a model is provided as a command-line argument and is valid, or if an env variable is set
-	if len(sys.argv) > 1 and sys.argv[1] in valid_models:
-		model = sys.argv[1]
-	else:
-		model = os.environ.get("FORENSIC_DETECTION_MODEL", "")
-
-	if model in valid_models:
-		print("Model found:", model)
-	else:
-		print("No valid model found.")
-
-		# Choose the FDM
-		model_prompt = [
-			inquirer.List('model',
-						message="Please choose the forensic detection model to use",
-						choices=valid_models,
-						default='resnet18'),  # Note: 'default' should be one of the 'choices'
-		]
-
-		model_name = inquirer.prompt(model_prompt)["model"]
-		print("Selected model:", model_name)
-
-		# Set the model for future use, if needed
-		os.environ["FORENSIC_DETECTION_MODEL"] = model_name
+	# Retrieving params such as model and available GPUs 
+	params = choose_launch_parameters()
+	model_name = params["model"]
+	gpu_ids = params['gpus']
+	gpu_ids = ','.join(map(str, gpu_ids))
 
 	# Setting the GPU
-	gpu_ids = "0"
-	os.environ["CUDA_VISIBLE_DEVICES"] = gpu_ids
 	os.environ["HDF5_USE_FILE_LOCKING"] = "FALSE"
+	os.environ["CUDA_VISIBLE_DEVICES"] = gpu_ids
 
 	num_gpus = torch.cuda.device_count()
-	print("Num GPU's:", num_gpus)
-
 	gpu_indexes = np.arange(num_gpus).tolist()
-	#gpu_indexes = np.array(list(map(int, gpu_ids.split(","))))
-	print("Allocated GPU's for model:", gpu_indexes)
+
+
+	print("\n---Launching parameters---")
+	print("Allocated GPU(s) for model:", num_gpus)
+	print("Forensic detection model:", model_name)
+	input("\nPress [ENTER] to confirm...")
+	print("---Execution---")
+
 
 	img_height = 512
 	img_width = 512
@@ -104,7 +84,6 @@ def main():
 
 	# [OLD] Loading model
 	model = getModel(gpu_indexes, model_name)
-	#model = getModel(gpu_indexes, "resnet152")
 
 	#Put the model into training mode
 	model.train()
@@ -205,6 +184,67 @@ def main():
 
 	TNR, TPR, FPR, FNR, acc_bal = calculate_balanced_accuracy_and_auc(test_predictions, test_labels)
 	print(colored("Epoch: {}/{}, TPR: {:.2%}, TNR: {:.2%}, ACC_BAL: {:.2%}".format(epoch_counter, num_epochs, TPR, TNR, acc_bal), 'cyan'))
+
+def choose_launch_parameters():
+
+	params = {}
+	# List of valid models
+	valid_models = ['resnet18', 'resnet152', 'SpliceBuster']
+
+	# Check if a model is provided as a command-line argument and is valid, or if an env variable is set
+	if len(sys.argv) > 1 and sys.argv[1] in valid_models:
+		model = sys.argv[1]
+	else:
+		model = os.environ.get("FORENSIC_DETECTION_MODEL", "")
+
+	if model in valid_models:
+		print("Model found:", model)
+	else:
+		print("No valid model found.")
+
+		# Choose the FDM
+		model_prompt = [
+			inquirer.List('model',
+						message="Please choose the forensic detection model to use",
+						choices=valid_models,
+						default='resnet18'),  # Note: 'default' should be one of the 'choices'
+		]
+
+		model = inquirer.prompt(model_prompt)["model"]
+		print("Selected model:", model)
+
+		# Set the model for future use, if needed
+		os.environ["FORENSIC_DETECTION_MODEL"] = model
+
+	params['model'] = model
+
+	# Define a list of 10 GPUs (from 0 to 9)
+	available_gpus = [str(i) for i in range(10)]  # Always display a list of 10 GPUs
+
+	# Check if GPU indices are provided as a command-line argument
+	if len(sys.argv) > 2:
+		input_gpus = sys.argv[2]
+		gpu_list = [gpu for gpu in input_gpus.split(',') if gpu in available_gpus]
+	else:
+		gpu_list = []
+
+	if gpu_list:
+		print("GPUs selected:", gpu_list)
+	else:
+		print("No valid GPUs found or none selected.")
+		# Choose the GPUs, always displaying options for 10 GPUs
+		gpu_prompt = [
+			inquirer.Checkbox('gpus',
+							message="Please choose the GPU indices to use (0-9)",
+							choices=available_gpus,
+							default=available_gpus[0]),  # Default to the first GPU
+		]
+		gpu_indices = inquirer.prompt(gpu_prompt)['gpus']
+		gpu_list = [str(i) for i in gpu_indices]  # Convert back to strings if needed
+
+	params['gpus'] = gpu_list
+	return params
+
 
 
 def save_original_and_ela_images(img_path, val_sampler):
