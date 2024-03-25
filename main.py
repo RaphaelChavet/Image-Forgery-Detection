@@ -14,8 +14,9 @@ from sklearn.metrics import confusion_matrix, roc_auc_score
 
 from data_loader import sampleBatches, sampleBatchesEvaluation, dataset_processing
 from models import getModel
-
+import inquirer
 import cv2
+import sys
 
 AUTHENTIC_DIR = "/hadatasets/gabriel_bertocco/ForensicsDatasets/CASIA2.0/CASIA2.0_revised/Au"
 TAMPERED_DIR = "/hadatasets/gabriel_bertocco/ForensicsDatasets/CASIA2.0/CASIA2.0_revised/Tp"
@@ -24,8 +25,36 @@ np.random.seed(12)
 
 def main():
 
+	# List of valid models
+	valid_models = ['resnet18', 'resnet152', 'SpliceBuster']
+
+	# Check if a model is provided as a command-line argument and is valid, or if an env variable is set
+	if len(sys.argv) > 1 and sys.argv[1] in valid_models:
+		model = sys.argv[1]
+	else:
+		model = os.environ.get("FORENSIC_DETECTION_MODEL", "")
+
+	if model in valid_models:
+		print("Model found:", model)
+	else:
+		print("No valid model found.")
+
+		# Choose the FDM
+		model_prompt = [
+			inquirer.List('model',
+						message="Please choose the forensic detection model to use",
+						choices=valid_models,
+						default='resnet18'),  # Note: 'default' should be one of the 'choices'
+		]
+
+		model_name = inquirer.prompt(model_prompt)["model"]
+		print("Selected model:", model_name)
+
+		# Set the model for future use, if needed
+		os.environ["FORENSIC_DETECTION_MODEL"] = model_name
+
 	# Setting the GPU
-	gpu_ids = "6,7"
+	gpu_ids = "0"
 	os.environ["CUDA_VISIBLE_DEVICES"] = gpu_ids
 	os.environ["HDF5_USE_FILE_LOCKING"] = "FALSE"
 
@@ -73,20 +102,20 @@ def main():
 	plot_forgery_formation(img_path)
 	'''
 
-	# Loading model
-	#model = getModel(gpu_indexes, "resnet18")
-	model = getModel(gpu_indexes, "resnet152")
+	# [OLD] Loading model
+	model = getModel(gpu_indexes, model_name)
+	#model = getModel(gpu_indexes, "resnet152")
+
+	#Put the model into training mode
 	model.train()
 
 	#bce_loss = BCELoss(reduction='mean')
 	ce_loss = CrossEntropyLoss(reduction='mean')
 	optimizer = torch.optim.Adam(model.parameters(), lr=1e-4, weight_decay=1e-4)
 
-	num_epochs = 300
+	num_epochs = 5
 	best_acc_bal = 0.0
-
 	for epoch_counter in range(num_epochs):
-
 		batch_counter = 0
 		for batch_images, batch_labels in trainLoader:
 			batch_images = batch_images.cuda(gpu_indexes[0])
@@ -145,7 +174,6 @@ def main():
 		print("Best checkpoint so far is from epoch {}".format(best_checkpoint_epoch+1))
 
 		model.train()
-
 
 	# Evaluation on test set
 	print("Evaluating best checkpoint in test set ...")

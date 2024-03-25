@@ -26,7 +26,7 @@ np.random.seed(12)
 def main():
 
 	# Setting the GPU
-	gpu_ids = "1"
+	gpu_ids = "0"
 	os.environ["CUDA_VISIBLE_DEVICES"] = gpu_ids
 	os.environ["HDF5_USE_FILE_LOCKING"] = "FALSE"
 
