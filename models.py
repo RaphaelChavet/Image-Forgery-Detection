@@ -2,6 +2,7 @@ from torchvision.models import resnet18, resnet152
 from torchvision.models import ResNet18_Weights, ResNet152_Weights
 from torch.nn import Module, Sigmoid, Linear, AdaptiveAvgPool2d, AdaptiveMaxPool2d
 from torch.nn import DataParallel
+from spliceburster.src import SB_launcher, SB_out2uint8, SB_showout, SB 
 
 def getModel(gpu_indexes, model_name):
 	
@@ -11,6 +12,9 @@ def getModel(gpu_indexes, model_name):
 	elif model_name == 'resnet152':
 		model = resnet152(weights=ResNet152_Weights.IMAGENET1K_V1)
 		model = ResNet152(model).cuda()
+	elif model_name =="splicebuster":
+		#launch SB_launcher and exit this programm...
+		exit
 
 	model.eval()
 	model = DataParallel(model, device_ids=gpu_indexes)

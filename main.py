@@ -1,8 +1,8 @@
 import os
-
 import numpy as np
 from termcolor import colored
 import time
+
 import torch
 import torchvision
 
@@ -14,6 +14,7 @@ from sklearn.metrics import confusion_matrix, roc_auc_score
 
 from data_loader import sampleBatches, sampleBatchesEvaluation, dataset_processing
 from models import getModel
+
 import inquirer
 import cv2
 import sys
@@ -66,9 +67,9 @@ def main():
 	valLoader = DataLoader(val_sampler, batch_size=batch_size, num_workers=8, pin_memory=True, shuffle=False, drop_last=False, collate_fn=collate_samples)
 
 	# Some visualizations of images and their respective ELA images
-	'''
 	img_path = "/hadatasets/gabriel_bertocco/ForensicsDatasets/CASIA2.0/CASIA2.0_revised/Au/Au_arc_30714.jpg"
 	save_original_and_ela_images(img_path, val_sampler)
+	
 
 	img_path = "/hadatasets/gabriel_bertocco/ForensicsDatasets/CASIA2.0/CASIA2.0_revised/Au/Au_nat_30090.jpg"
 	save_original_and_ela_images(img_path, val_sampler)
@@ -80,9 +81,8 @@ def main():
 	img_path = "/hadatasets/gabriel_bertocco/ForensicsDatasets/CASIA2.0/CASIA2.0_revised/Tp/Tp_D_NRN_M_N_nat10116_cha00031_11368.jpg"
 	save_original_and_ela_images(img_path, val_sampler)
 	plot_forgery_formation(img_path)
-	'''
 
-	# [OLD] Loading model
+	#Loading Model
 	model = getModel(gpu_indexes, model_name)
 
 	#Put the model into training mode
@@ -189,7 +189,7 @@ def choose_launch_parameters():
 
 	params = {}
 	# List of valid models
-	valid_models = ['resnet18', 'resnet152', 'SpliceBuster']
+	valid_models = ['resnet18', 'resnet152', 'splicebuster']
 
 	# Check if a model is provided as a command-line argument and is valid, or if an env variable is set
 	if len(sys.argv) > 1 and sys.argv[1] in valid_models:
@@ -231,8 +231,10 @@ def choose_launch_parameters():
 	if gpu_list:
 		print("GPUs selected:", gpu_list)
 	else:
-		print("No valid GPUs found or none selected.")
-		# Choose the GPUs, always displaying options for 10 GPUs
+		print("No GPU selected.")
+		# Choose the GPUs, always displaying options for 10 GPUs 
+		# (using conda command before defining CUDA_VISIBLE_DEVICES makes this env variable useless)
+
 		gpu_prompt = [
 			inquirer.Checkbox('gpus',
 							message="Please choose the GPU indices to use (0-9)",
@@ -275,8 +277,6 @@ def plot_forgery_formation(img_forgery_path):
 
 	print("Source image path: %s" % full_img01_path)
 	print("Target image path: %s" % full_img02_path)
-
-
 
 
 def calculate_balanced_accuracy_and_auc(preds, labels, threshold=0.5):
