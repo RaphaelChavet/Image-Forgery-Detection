@@ -51,3 +51,16 @@ This can be choosed by:
     [ ] 9
     ````
 
+### Model usages
+
+#### SpliceBuster
+
+The code related to the SpliceBuster **image splicing detector** is available throught this link:
+ https://www.grip.unina.it/download/prog/Splicebuster/
+
+ The README.md file located in the spliceburster folder describes how to use it standalone.
+
+The SpliceBurster model will:
+1. Read every images located in the assets/input_images folder as an input
+2. Process them in parallel (multiprocessing) in order to get a .mat file from each one of them (in the assets/results/mat folder)
+3. Process this .mat file in order to get a png image to vizualise the spliced zones. (in the assets/results/png folder)
