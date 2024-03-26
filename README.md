@@ -1,5 +1,7 @@
 ## Launching the code
 
+This code has been tested under python 3.7.
+
 ### Choosing the model
 Currently, the code supports these models:
 * resnet18

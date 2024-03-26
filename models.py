@@ -2,9 +2,10 @@ from torchvision.models import resnet18, resnet152
 from torchvision.models import ResNet18_Weights, ResNet152_Weights
 from torch.nn import Module, Sigmoid, Linear, AdaptiveAvgPool2d, AdaptiveMaxPool2d
 from torch.nn import DataParallel
-from concurrent.futures import ThreadPoolExecutor
+from concurrent.futures import ThreadPoolExecutor, as_completed
 import subprocess 
 import os
+from tqdm import tqdm
 
 CURRENT_DIR = os.path.dirname(os.path.abspath(__file__))
 
@@ -65,22 +66,39 @@ class SpliceBurster:
 		output_mat_file = os.path.join(self.output_mat_dir, f'mat_{os.path.splitext(image_name)[0]}.mat')
 		output_png_file = os.path.join(self.output_png_dir, f'res_{os.path.splitext(image_name)[0]}.png')
 
-		print(f"---GENERATING .MAT FILE for {image_name}---")
+		#print(f"---GENERATING .MAT FILE for {image_name}---")
 		subprocess.run(['python', self.sb_launcher_path, img_to_check, output_mat_file], check=True)
 
-		print(f"---CONVERTING .MAT FILE INTO PNG for {image_name}---")
+		#print(f"---CONVERTING .MAT FILE INTO PNG for {image_name}---")
 		subprocess.run(['python', self.sb_out2uint8_path, output_mat_file, output_png_file], check=True)
 
+
+
 	def run(self):
+		print("---READING INPUT IMAGES---")
 		# List all images in the input_images directory
 		input_images = [f for f in os.listdir(self.input_images_dir) if os.path.isfile(os.path.join(self.input_images_dir, f))]
 
+		print("---PROCESSING", len(input_images), "IMAGES---")
+		# Initialize the progress bar
+		progress_bar = tqdm(total=len(input_images), desc="Processing Images", unit="image")
+		
 		# Use ThreadPoolExecutor to run subprocesses simultaneously for each image
+		futures = []
 		with ThreadPoolExecutor() as executor:
-			executor.map(self.process_image, input_images)
-
-		print("Processing completed for all images.")
-
+			# Submit all tasks and record their futures
+			for img in input_images:
+				future = executor.submit(self.process_image, img)
+				futures.append(future)
+			
+			# As each future completes, update the progress bar
+			for future in as_completed(futures):
+				result = future.result()  # You can use the result if needed
+				progress_bar.update(1)  # Update progress bar after finishing each image
+		
+		# Close the progress bar
+		progress_bar.close()
+		# print("Processing completed for all images.") # Uncomment if you want to print when all are done
 
 
 class ResNet18(Module):
