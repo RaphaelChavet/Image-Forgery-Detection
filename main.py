@@ -66,6 +66,7 @@ def main():
 	val_sampler = sampleBatchesEvaluation(val_images_paths, img_height, img_width, quality)
 	valLoader = DataLoader(val_sampler, batch_size=batch_size, num_workers=8, pin_memory=True, shuffle=False, drop_last=False, collate_fn=collate_samples)
 
+	'''
 	# Some visualizations of images and their respective ELA images
 	img_path = "/hadatasets/gabriel_bertocco/ForensicsDatasets/CASIA2.0/CASIA2.0_revised/Au/Au_arc_30714.jpg"
 	save_original_and_ela_images(img_path, val_sampler)
@@ -81,7 +82,8 @@ def main():
 	img_path = "/hadatasets/gabriel_bertocco/ForensicsDatasets/CASIA2.0/CASIA2.0_revised/Tp/Tp_D_NRN_M_N_nat10116_cha00031_11368.jpg"
 	save_original_and_ela_images(img_path, val_sampler)
 	plot_forgery_formation(img_path)
-
+	'''
+	
 	#Loading Model
 	model = getModel(gpu_indexes, model_name)
 

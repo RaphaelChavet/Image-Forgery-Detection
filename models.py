@@ -2,7 +2,11 @@ from torchvision.models import resnet18, resnet152
 from torchvision.models import ResNet18_Weights, ResNet152_Weights
 from torch.nn import Module, Sigmoid, Linear, AdaptiveAvgPool2d, AdaptiveMaxPool2d
 from torch.nn import DataParallel
-from spliceburster.src import SB_launcher, SB_out2uint8, SB_showout, SB 
+from concurrent.futures import ThreadPoolExecutor
+import subprocess 
+import os
+
+CURRENT_DIR = os.path.dirname(os.path.abspath(__file__))
 
 def getModel(gpu_indexes, model_name):
 	
@@ -13,12 +17,71 @@ def getModel(gpu_indexes, model_name):
 		model = resnet152(weights=ResNet152_Weights.IMAGENET1K_V1)
 		model = ResNet152(model).cuda()
 	elif model_name =="splicebuster":
-		#launch SB_launcher and exit this programm...
-		exit
+		sb = SpliceBurster(CURRENT_DIR)
+		sb.run()
+		exit()
+
 
 	model.eval()
 	model = DataParallel(model, device_ids=gpu_indexes)
 	return model
+
+class SpliceBurster:
+	def __init__(self, base_dir):
+		self.base_dir = base_dir
+		self.input_images_dir = os.path.join(base_dir, 'assets/input_images')
+		self.output_mat_dir = os.path.join(base_dir, 'assets/results/mat')
+		self.output_png_dir = os.path.join(base_dir, 'assets/results/png')
+		self.sb_launcher_path = os.path.join(base_dir, 'spliceburster/src/SB_launcher.py')
+		self.sb_out2uint8_path = os.path.join(base_dir, 'spliceburster/src/SB_out2uint8.py')
+
+		
+
+		# Ensure output directories exist and clear eventual contents
+		self.check_and_clear_directory(self.output_mat_dir)
+		self.check_and_clear_directory(self.output_png_dir)
+
+	
+	@staticmethod
+	def check_and_clear_directory(directory):
+		if os.path.exists(directory):
+			# Remove existing files in the directory
+			for filename in os.listdir(directory):
+				file_path = os.path.join(directory, filename)
+				try:
+					if os.path.isfile(file_path) or os.path.islink(file_path):
+						os.unlink(file_path)
+					elif os.path.isdir(file_path):
+						shutil.rmtree(file_path)
+				except Exception as e:
+					print(f'Failed to delete {file_path}. Reason: {e}')
+		else:
+			# Create directory if it does not exist
+			os.makedirs(directory, exist_ok=True)
+
+
+	def process_image(self, image_name):
+		img_to_check = os.path.join(self.input_images_dir, image_name)
+		output_mat_file = os.path.join(self.output_mat_dir, f'mat_{os.path.splitext(image_name)[0]}.mat')
+		output_png_file = os.path.join(self.output_png_dir, f'res_{os.path.splitext(image_name)[0]}.png')
+
+		print(f"---GENERATING .MAT FILE for {image_name}---")
+		subprocess.run(['python', self.sb_launcher_path, img_to_check, output_mat_file], check=True)
+
+		print(f"---CONVERTING .MAT FILE INTO PNG for {image_name}---")
+		subprocess.run(['python', self.sb_out2uint8_path, output_mat_file, output_png_file], check=True)
+
+	def run(self):
+		# List all images in the input_images directory
+		input_images = [f for f in os.listdir(self.input_images_dir) if os.path.isfile(os.path.join(self.input_images_dir, f))]
+
+		# Use ThreadPoolExecutor to run subprocesses simultaneously for each image
+		with ThreadPoolExecutor() as executor:
+			executor.map(self.process_image, input_images)
+
+		print("Processing completed for all images.")
+
+
 
 class ResNet18(Module):
     
