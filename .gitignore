@@ -1,5 +1,5 @@
 __pycache__
-spliceburster
-assets/input_images/*
-assets/results/mat/*
-assets/results/png/*
+#spliceburster
+#assets/input_images/*
+#assets/results/mat/*
+#assets/results/png/*

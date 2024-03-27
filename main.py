@@ -50,8 +50,8 @@ def main():
 	img_width = 512
 	quality = 90
 
-	#data_manager = dataset_processing()
-	#train_images_paths, val_images_paths, test_images_paths = data_manager.get_sets()
+	data_manager = dataset_processing()
+	train_images_paths, val_images_paths, test_images_paths = data_manager.get_sets()
 
 	# Defining data loader
 	img_height = 128
@@ -59,12 +59,12 @@ def main():
 	quality = 90
 	
 	batch_size = 1024
-	#train_sampler = sampleBatches(train_images_paths, img_height, img_width, quality)
-	#trainLoader = DataLoader(train_sampler, batch_size=batch_size, num_workers=8, pin_memory=True, shuffle=True, drop_last=True, collate_fn=collate_samples)
-	#num_iterations = len(trainLoader)
+	train_sampler = sampleBatches(train_images_paths, img_height, img_width, quality)
+	trainLoader = DataLoader(train_sampler, batch_size=batch_size, num_workers=8, pin_memory=True, shuffle=True, drop_last=True, collate_fn=collate_samples)
+	num_iterations = len(trainLoader)
 
-	#val_sampler = sampleBatchesEvaluation(val_images_paths, img_height, img_width, quality)
-	#valLoader = DataLoader(val_sampler, batch_size=batch_size, num_workers=8, pin_memory=True, shuffle=False, drop_last=False, collate_fn=collate_samples)
+	val_sampler = sampleBatchesEvaluation(val_images_paths, img_height, img_width, quality)
+	valLoader = DataLoader(val_sampler, batch_size=batch_size, num_workers=8, pin_memory=True, shuffle=False, drop_last=False, collate_fn=collate_samples)
 
 	'''
 	# Some visualizations of images and their respective ELA images
