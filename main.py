@@ -191,7 +191,7 @@ def choose_launch_parameters():
 
 	params = {}
 	# List of valid models
-	valid_models = ['resnet18', 'resnet152', 'splicebuster']
+	valid_models = ['resnet18', 'resnet152', 'splicebuster', 'trufor']
 
 	# Check if a model is provided as a command-line argument and is valid, or if an env variable is set
 	if len(sys.argv) > 1 and sys.argv[1] in valid_models:
@@ -276,7 +276,7 @@ def plot_forgery_formation(img_forgery_path):
 
 	full_img01_path = os.path.join(AUTHENTIC_DIR, img_name01)
 	full_img02_path = os.path.join(AUTHENTIC_DIR, img_name02)
-
+ 
 	print("Source image path: %s" % full_img01_path)
 	print("Target image path: %s" % full_img02_path)
 
