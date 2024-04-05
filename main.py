@@ -45,7 +45,7 @@ def main():
 	input("\nPress [ENTER] to confirm...")
 	print("---Execution---")
 
-
+	'''
 	img_height = 512
 	img_width = 512
 	quality = 90
@@ -66,7 +66,7 @@ def main():
 	val_sampler = sampleBatchesEvaluation(val_images_paths, img_height, img_width, quality)
 	valLoader = DataLoader(val_sampler, batch_size=batch_size, num_workers=8, pin_memory=True, shuffle=False, drop_last=False, collate_fn=collate_samples)
 
-	'''
+	
 	# Some visualizations of images and their respective ELA images
 	img_path = "/hadatasets/gabriel_bertocco/ForensicsDatasets/CASIA2.0/CASIA2.0_revised/Au/Au_arc_30714.jpg"
 	save_original_and_ela_images(img_path, val_sampler)
@@ -237,12 +237,20 @@ def choose_launch_parameters():
 		# Choose the GPUs, always displaying options for 10 GPUs 
 		# (using conda command before defining CUDA_VISIBLE_DEVICES makes this env variable useless)
 
-		gpu_prompt = [
-			inquirer.Checkbox('gpus',
-							message="Please choose the GPU indices to use (0-9)",
-							choices=available_gpus,
-							default=available_gpus[0]),  # Default to the first GPU
-		]
+		if model == 'trufor':
+			gpu_prompt = [
+				inquirer.List('gpus',
+							   message="Please choose the GPU indices to use (0-9)",
+							   choices=available_gpus,
+							   default=available_gpus[0]),  # Default to the first GPU
+			]
+		else:
+			gpu_prompt = [
+				inquirer.Checkbox('gpus',
+								  message="Please choose the GPU indices to use (0-9)",
+								  choices=available_gpus,
+								  default=available_gpus[0]),  # Default to the first GPU
+			]
 		gpu_indices = inquirer.prompt(gpu_prompt)['gpus']
 		gpu_list = [str(i) for i in gpu_indices]  # Convert back to strings if needed
 

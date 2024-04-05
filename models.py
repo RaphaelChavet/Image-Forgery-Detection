@@ -6,6 +6,8 @@ from concurrent.futures import ThreadPoolExecutor, as_completed
 import subprocess 
 import os
 from tqdm import tqdm
+import subprocess
+import torch
 
 CURRENT_DIR = os.path.dirname(os.path.abspath(__file__))
 
@@ -19,6 +21,11 @@ def getModel(gpu_indexes, model_name):
 		model = ResNet152(model).cuda()
 	elif model_name =="splicebuster":
 		sb = SpliceBurster(CURRENT_DIR)
+		sb.run()
+		exit()
+	elif model_name =="trufor":
+		sb = TruFor(CURRENT_DIR)
+		print('RUNNING TF')
 		sb.run()
 		exit()
 
@@ -96,6 +103,86 @@ class SpliceBurster:
 				result = future.result()  # You can use the result if needed
 				progress_bar.update(1)  # Update progress bar after finishing each image
 		
+		# Close the progress bar
+		progress_bar.close()
+		# print("Processing completed for all images.") # Uncomment if you want to print when all are done
+
+class TruFor:
+	def __init__(self, base_dir):
+		self.base_dir = base_dir
+		self.input_images_dir = os.path.join(base_dir, 'assets/input_images')
+		self.output_npz_dir = os.path.join(base_dir, 'assets/results/npz')
+		self.output_png_dir = os.path.join(base_dir, 'assets/results/png')
+		self.tf_launcher_path = os.path.join(base_dir, 'trufor/code/src/trufor_test.py')
+		self.tf_visualize_path = os.path.join(base_dir, 'trufor/code/visualize.py')
+
+		
+
+		# Ensure output directories exist and clear eventual contents
+		self.check_and_clear_directory(self.output_npz_dir)
+		self.check_and_clear_directory(self.output_png_dir)
+
+	
+	@staticmethod
+	def check_and_clear_directory(directory):
+		if os.path.exists(directory):
+			# Remove existing files in the directory
+			for filename in os.listdir(directory):
+				file_path = os.path.join(directory, filename)
+				try:
+					if os.path.isfile(file_path) or os.path.islink(file_path):
+						os.unlink(file_path)
+					elif os.path.isdir(file_path):
+						shutil.rmtree(file_path)
+				except Exception as e:
+					print(f'Failed to delete {file_path}. Reason: {e}')
+		else:
+			# Create directory if it does not exist
+			os.makedirs(directory, exist_ok=True)
+
+
+	def process_image(self, image_name):
+		img_to_check = os.path.join(self.input_images_dir, image_name)
+		output_npz_file = os.path.join(self.output_npz_dir, f'{image_name}.npz')
+
+		print(f"---CONVERTING .NPZ FILE INTO PNG for {image_name}---")
+		subprocess.run(['python', self.tf_visualize_path, '--image', img_to_check, '--output', output_npz_file], check=True)
+
+
+
+	def run(self):
+		print("---READING INPUT IMAGES---")
+		# List all images in the input_images directory
+		input_images = [f for f in os.listdir(self.input_images_dir) if os.path.isfile(os.path.join(self.input_images_dir, f))]
+
+		print("---PROCESSING", len(input_images), "IMAGES---")
+		# Initialize the progress bar
+		progress_bar = tqdm(total=len(input_images), desc="Processing Images", unit="image")
+		
+		# Use ThreadPoolExecutor to run subprocesses simultaneously for each image
+		futures = []
+
+		print(f"---GENERATING .NPZ FILES---")
+		# Use conda command to list available GPUs
+		if torch.cuda.is_available():
+			gpu_indexes = list(range(torch.cuda.device_count()))
+		else:
+			gpu_indexes = []
+
+		print("Available GPUs:", gpu_indexes)
+
+		# Construct the --gpus argument
+		if gpu_indexes:
+			gpus_argument = ['-gpu', ','.join(map(str, gpu_indexes))]
+		else:
+			gpus_argument = ['-gpu', '-1']
+			print("No gpu chosen or gpu unavailable, using CPU")
+
+		# Modify the code to include the --gpus and --save-np arguments
+		subprocess.run(['python', self.tf_launcher_path] + gpus_argument + ['--save_np'], check=True)
+		for img in input_images:
+			self.process_image(img)
+			progress_bar.update(1)
 		# Close the progress bar
 		progress_bar.close()
 		# print("Processing completed for all images.") # Uncomment if you want to print when all are done

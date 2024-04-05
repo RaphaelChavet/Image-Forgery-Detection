@@ -1,5 +1,9 @@
 __pycache__
 #spliceburster
-#assets/input_images/*
-#assets/results/mat/*
-#assets/results/png/*
+assets/input_images/*
+assets/results/mat/*
+assets/results/png/*
+assets/results/npz/*
+assets/input_stock/*
+assets/input_images/*
+trufor/code/weights/*
