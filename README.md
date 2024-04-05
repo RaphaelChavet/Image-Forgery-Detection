@@ -7,6 +7,7 @@ Currently, the code supports these models:
 * resnet18
 * resnet152
 * sliceburster
+* trufor
 
 You can choose the model used by three ways:
 * Pass the model name as a first argument when launching the script:
@@ -25,6 +26,7 @@ You can choose the model used by three ways:
     > resnet18
     resnet152
     SpliceBuster
+    TruFor
     ````
 
 > :wrench: If the model is still prompted, there is probably an error in the model you wrote. Check for the spelling and the absence of uppercases.
@@ -66,3 +68,15 @@ The SpliceBurster model will:
 1. Read every images located in the assets/input_images folder as an input
 2. Process them in parallel (multiprocessing) in order to get a .mat file from each one of them (in the assets/results/mat folder)
 3. Process this .mat file in order to get a png image to vizualise the spliced zones. (in the assets/results/png folder)
+4. 
+#### TruFOr
+
+The code related to the Trufor model is available throught this link:
+ https://github.com/grip-unina/TruFor
+
+ The README.md file located in the trufor folder describes how to use it standalone. In order to integrate it to this code, some edits have been made on the original TruFor code, so be aware it may not work correctly running standalone.
+
+The TruFor model will:
+1. Read every images located in the assets/input_images folder as an input
+2. Process them in parallel (multiprocessing) in order to get a .npz file from each one of them (in the assets/results/npz folder)
+3. Process this .npz file in order to get a png image to vizualise the spliced zones. (in the assets/results/png folder)
