@@ -68,8 +68,9 @@ The SpliceBurster model will:
 1. Read every images located in the assets/input_images folder as an input
 2. Process them in parallel (multiprocessing) in order to get a .mat file from each one of them (in the assets/results/mat folder)
 3. Process this .mat file in order to get a png image to vizualise the spliced zones. (in the assets/results/png folder)
-4. 
-#### TruFOr
+
+
+#### TruFor
 
 The code related to the Trufor model is available throught this link:
  https://github.com/grip-unina/TruFor
@@ -78,5 +79,5 @@ The code related to the Trufor model is available throught this link:
 
 The TruFor model will:
 1. Read every images located in the assets/input_images folder as an input
-2. Process them in parallel (multiprocessing) in order to get a .npz file from each one of them (in the assets/results/npz folder)
+2. Process them in order to get a .npz file from each one of them (in the assets/results/npz folder)
 3. Process this .npz file in order to get a png image to vizualise the spliced zones. (in the assets/results/png folder)

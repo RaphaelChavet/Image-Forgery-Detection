@@ -45,7 +45,6 @@ def main():
 	input("\nPress [ENTER] to confirm...")
 	print("---Execution---")
 
-	'''
 	img_height = 512
 	img_width = 512
 	quality = 90
@@ -66,7 +65,7 @@ def main():
 	val_sampler = sampleBatchesEvaluation(val_images_paths, img_height, img_width, quality)
 	valLoader = DataLoader(val_sampler, batch_size=batch_size, num_workers=8, pin_memory=True, shuffle=False, drop_last=False, collate_fn=collate_samples)
 
-	
+	'''
 	# Some visualizations of images and their respective ELA images
 	img_path = "/hadatasets/gabriel_bertocco/ForensicsDatasets/CASIA2.0/CASIA2.0_revised/Au/Au_arc_30714.jpg"
 	save_original_and_ela_images(img_path, val_sampler)
@@ -84,9 +83,27 @@ def main():
 	plot_forgery_formation(img_path)
 	'''
 	
-	#Loading Model
+	# Loading Model
 	model = getModel(gpu_indexes, model_name)
 
+	# Checkbox prompt to select execution mode
+	mode_prompt = [
+		inquirer.Checkbox('mode',
+						  message="Select execution mode:",
+						  choices=['Train', 'Eval', 'Test'],
+						  default=['Train']),
+	]
+	selected_modes = inquirer.prompt(mode_prompt)['mode']
+
+	# Launching the corresponding function(s) based on selected modes
+	if 'Train' in selected_modes:
+		train(model, gpu_indexes, trainLoader, num_iterations)
+	if 'Eval' in selected_modes:
+		eval(model, gpu_indexes, valLoader, epoch_counter, num_epochs, best_acc_bal, best_checkpoint_epoch)
+	if 'Test' in selected_modes:
+		test(model, gpu_indexes, test_images_paths, img_height, img_width, quality, batch_size, epoch_counter, num_epochs)
+
+def train(model, gpu_indexes, trainLoader, num_iterations):
 	#Put the model into training mode
 	model.train()
 
@@ -95,7 +112,7 @@ def main():
 	optimizer = torch.optim.Adam(model.parameters(), lr=1e-4, weight_decay=1e-4)
 
 	num_epochs = 5
-	best_acc_bal = 0.0
+	#best_acc_bal = 0.0
 	for epoch_counter in range(num_epochs):
 		batch_counter = 0
 		for batch_images, batch_labels in trainLoader:
@@ -120,42 +137,43 @@ def main():
 			TNR, TPR, FPR, FNR, acc_bal = calculate_balanced_accuracy_and_auc(preds, batch_labels)
 			print("Epoch: {}/{}, Iteration: {}/{}, Batch Loss: {:.7}, TPR: {:.2%}, TNR: {:.2%}, ACC_BAL: {:.2%}".format(epoch_counter+1, num_epochs, 
 																																	batch_counter, num_iterations, 
-																																	batch_loss.item(), TPR, TNR, 
+																																batch_loss.item(), TPR, TNR, 
 																																	acc_bal))
-		
-		print("Evaluting in validation set ...")
-		# Evaluation on validation set
-		model.eval()
-		validation_predictions = []
-		validation_labels = []
-		for batch_images, batch_labels in valLoader:
-			batch_images = batch_images.cuda(gpu_indexes[0])
-			# Reshape to match dimensions to the predictions (preds)
-			#batch_labels = batch_labels.reshape(batch_labels.shape[0], 1).cuda(gpu_indexes[0])
-			batch_labels = batch_labels.long().cuda(gpu_indexes[0])
+def eval(model, gpu_indexes, valLoader, epoch_counter, num_epochs, best_acc_bal, best_checkpoint_epoch):
+	print("Evaluting in validation set ...")
+	# Evaluation on validation set
+	model.eval()
+	validation_predictions = []
+	validation_labels = []
+	for batch_images, batch_labels in valLoader:
+		batch_images = batch_images.cuda(gpu_indexes[0])
+		# Reshape to match dimensions to the predictions (preds)
+		#batch_labels = batch_labels.reshape(batch_labels.shape[0], 1).cuda(gpu_indexes[0])
+		batch_labels = batch_labels.long().cuda(gpu_indexes[0])
 
-			with torch.no_grad():
-				preds = model(batch_images)
+		with torch.no_grad():
+			preds = model(batch_images)
 
-			validation_predictions.append(preds)
-			validation_labels.append(batch_labels)
+		validation_predictions.append(preds)
+		validation_labels.append(batch_labels)
 
-		
-		validation_predictions = torch.cat(validation_predictions, dim=0)
-		validation_labels = torch.cat(validation_labels, dim=0)
+	
+	validation_predictions = torch.cat(validation_predictions, dim=0)
+	validation_labels = torch.cat(validation_labels, dim=0)
 
-		TNR, TPR, FPR, FNR, acc_bal = calculate_balanced_accuracy_and_auc(validation_predictions, validation_labels)
-		print(colored("Epoch: {}/{}, TPR: {:.2%}, TNR: {:.2%}, ACC_BAL: {:.2%}".format(epoch_counter+1, num_epochs, TPR, TNR, acc_bal), 'yellow'))
+	TNR, TPR, FPR, FNR, acc_bal = calculate_balanced_accuracy_and_auc(validation_predictions, validation_labels)
+	print(colored("Epoch: {}/{}, TPR: {:.2%}, TNR: {:.2%}, ACC_BAL: {:.2%}".format(epoch_counter+1, num_epochs, TPR, TNR, acc_bal), 'yellow'))
 
-		if acc_bal > best_acc_bal:
-			best_acc_bal = acc_bal
-			best_checkpoint_epoch = epoch_counter
-			torch.save(model.state_dict(), "best_checkpoint.h5")
-		
-		print("Best checkpoint so far is from epoch {}".format(best_checkpoint_epoch+1))
+	if acc_bal > best_acc_bal:
+		best_acc_bal = acc_bal
+		best_checkpoint_epoch = epoch_counter
+		torch.save(model.state_dict(), "best_checkpoint.h5")
+	
+	print("Best checkpoint so far is from epoch {}".format(best_checkpoint_epoch+1))
+	model.train()
 
-		model.train()
 
+def test(model, gpu_indexes, test_images_paths, img_height, img_width, quality, batch_size, epoch_counter, num_epochs):
 	# Evaluation on test set
 	print("Evaluating best checkpoint in test set ...")
 
